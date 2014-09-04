@@ -37,6 +37,6 @@ const double Bfield=10.0;
 
 const double endcap = -50.0;
 // Seed the ranf() random number generator
-static unsigned int seed = 0x11111111;  
+//static unsigned int seed = 0x11111111;  
 
 #endif //!defined(constants.h)

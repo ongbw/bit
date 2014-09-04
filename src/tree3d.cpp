@@ -205,7 +205,6 @@ void treeshrink(TREE* tree1, PARTICLE* part)  {
 ///////////////////////////////////////////////////////
 int treedivide(int dir, TREE* split, TREE* c1, TREE* c2, PARTICLE* part)  {
 
-  int i=0;
   int j=0;
   int k=0;
   int n=0;
@@ -404,10 +403,6 @@ int treemake(int npart, int nterms, int maxmemb, PARTICLE* part, TREE* tree)  {
   int nchild2=0;
   int ind2=0;
   int numtree=1;
-  //temporary variable for testing...
-  int p=0;
-
-
 
   // Top level tree dimensions
   double minx=part[0].x;
@@ -1750,8 +1745,6 @@ int box_calc_tree(int npart, PARTICLE* part, int numpan, PANEL* pan,
 		  int maxmemb)  {
 
   int i;              // Index variable
-  char output[128];
-  int index=1;
 
   numtree=treemake(npart, nterms, maxmemb,  part, tree);
   treemoments(numtree,nterms,tree,part);
@@ -1832,7 +1825,6 @@ int box_calc_tree(int npart, PARTICLE* part, int numpan, PANEL* pan,
 //
 ///////////////////////////////////////////////////////
 void treemoments(int numtree, int nterms, TREE* tree, PARTICLE* part)  {
-  int m;
 
   double dx;
   double dy;
@@ -2368,7 +2360,7 @@ void shielded_treetaylorforce(int nterms, double dx, double dy, double dz,
   }
 
 
-
+  //[ongbw 09/04/14] -- looks fishy -- likely some debugging needed here
   // Add up the Taylor derivatives and moments to get the force
   for (int m=0; m<nterms; m++) {
     for (int k=0; k<nterms-m; k++)  {
@@ -2441,7 +2433,8 @@ void shielded_treetaylorpot(int nterms, double dx, double dy, double dz,
 
 
   // we should store this globally like pei jun
-  double cf[MAXTERM];
+  //[ongbw 09/4/14]: why isn't cf being used?
+  //double cf[MAXTERM];
   double cf1[MAXTERM];
   double cf2[MAXTERM];
   double cf3[MAXTERM];
@@ -2451,9 +2444,9 @@ void shielded_treetaylorpot(int nterms, double dx, double dy, double dz,
 	 << "computing vector of coefficients" << endl;
   }
 
-  cf[0] = 1;
+  //cf[0] = 1;
   for (int i=1;i<MAXTERM;i++) {
-    cf[i] = 1.0+i;
+    //cf[i] = 1.0+i;
     cf1[i] = 1.0/i;
     cf2[i] = 1.0-cf1[i]/2.0;
     cf3[i] = 1.0 - cf1[i];
@@ -3106,8 +3099,6 @@ double shielded_treepot(int ind, int p, int nterms,
 	     << "] to approximate potential for particle[" << p <<"]"  << endl;
       }
       int j;
-      double temp=0.0;
-      double expr;
 
       // Do direct summation on all particles in the cell
       if (p == -1)  {
@@ -3258,21 +3249,18 @@ void plot_efield_tree(int nxnodes, int nynodes, int nznodes, int npart,
   sprintf(output,"tree-efield_%i.plt",index);
   ofstream file(output);
 
-  //  x = 0.0;
-  //  for (i=0; i<nxnodes; i++)  {
-  //    y=0.0;
-  //    for (j=0; j<nynodes; j++)  {
-  //      z=0.0;
-  x = 0.6;
-  y = 0.2;
-  z = 0.3;
-  //    for (k=0; k<nznodes; k++)  {
-  x_temp=0.0;
-  y_temp=0.0;
-  z_temp=0.0;
-
-  // Use the treecode to compute the force
-  treeforce(0, -1, nterms, x, y, z, acc, &x_temp, &y_temp, &z_temp, tree, part);
+  x = 0.0;
+  for (i=0; i<nxnodes; i++)  {
+    y=0.0;
+    for (j=0; j<nynodes; j++)  {
+      z=0.0;
+      for (k=0; k<nznodes; k++)  {
+	x_temp=0.0;
+	y_temp=0.0;
+	z_temp=0.0;
+	
+	// Use the treecode to compute the force
+	treeforce(0, -1, nterms, x, y, z, acc, &x_temp, &y_temp, &z_temp, tree, part);
 	
 	x_force+=x_temp*charge_constant;
 	y_force+=y_temp*charge_constant;
@@ -3280,12 +3268,12 @@ void plot_efield_tree(int nxnodes, int nynodes, int nznodes, int npart,
 	file << setw(20) << setprecision(16) << std::scientific << endl;
 	file << x << "\t" << y << "\t" << z << "\t" 
 	     << x_force << "\t" << y_force << "\t" << z_force << endl;
-	//	z+=dz;
-	// }
-	//      y+=dy;
-	//    }
-	//    x+=dx;
-	//  }
+	z+=dz;
+      }
+      y+=dy;
+    }
+    x+=dx;
+  }
   
   file.close();
 
@@ -3336,9 +3324,9 @@ int setboundaries(int xpanels, int ypanels, int zpanels,
 
   int i=0;
   int j=0;
-  int k=0;
   int dirichlet=0;
-  int neumann=1;
+  // only dirichlet conditions coded so far
+  // int neumann=1;
   int totpan=0;
   int ind=0;
   
@@ -3366,11 +3354,7 @@ int setboundaries(int xpanels, int ypanels, int zpanels,
   double temp1=0.0;
   double temp2=0.0;
   double temp3=0.0;
-  double dx;
-  double dy;
-  double dz;
 
-  double* gpts = NULL;
   
   double* x;
   double halflength = dlength/2.0;
@@ -3628,8 +3612,6 @@ int panelconstantsreal(int numpan, PANEL* pan, double** panelarray){
 
   int i;
   int j;
-  int ind=0;
-  double t;
   double r;
 
   //initialize panelarray
@@ -3679,7 +3661,6 @@ int badpanelconstantsreal(int numpan, PANEL* pan, double** panelarray){
 
   int i;
   int j;
-  int ind=0;
   double temp;
 
   //initialize panelarray
@@ -4047,8 +4028,6 @@ void treetaylorpotential(int nterms, double dx, double dy, double dz,
   int i;
   int j;
   int k;
-  int k1;
-  int k2;
   int m;
 
   double fac=1.0/rs;
@@ -4750,36 +4729,33 @@ void plot_efield_ds(int nxnodes, int nynodes, int nznodes,
 	 << part[i].z << ")\n";
   }
   
-  //x=0.0;
-  //  for (i=0; i<nxnodes; i++)  {
-  //  y=0.0;
-  //  for (j=0; j<nynodes; j++)  {
-  //    z=0.0;
-  //    for (k=0; k<nznodes; k++)  {
-  x = 0.6;
-  y = 0.2;
-  z = 0.3;
-
+  x=0.0;
+  for (i=0; i<nxnodes; i++)  {
+    y=0.0;
+    for (j=0; j<nynodes; j++)  {
+      z=0.0;
+      for (k=0; k<nznodes; k++)  {
+	
   	x_temp=0.0;
   	y_temp=0.0;
   	z_temp=0.0;
 	
 	// Use direct sum to compute the force 
 	force_point_ds(x,y,z,npart,part,&x_temp,&y_temp,&z_temp);
-  
+	
 	x_force+=x_temp*charge_constant;
 	y_force+=y_temp*charge_constant;
 	z_force+=z_temp*charge_constant;
-  
+	
 	file << setw(20) << setprecision(16) <<std::scientific << endl;
 	file << x << "\t" << y << "\t" << z << "\t" 
 	     << x_force << "\t" << y_force << "\t" << z_force << endl;
-	//	z+=dz;
-	//}
-	//y+=dy;
-	//    }
-	//    x+=dx;
-	//  }
+		z+=dz;
+      }
+      y+=dy;
+    }
+    x+=dx;
+  }
   
   file.close();
 
