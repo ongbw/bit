@@ -76,8 +76,8 @@ int main()  {
   double erry;
   double errz;
 
-  double errstore;
-  double errnew;
+  double errstore=0.0;
+  double errnew=0.0;
 
   // check convergence in the number of terms
   int failflag=0;
