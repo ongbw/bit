@@ -10,6 +10,7 @@ AC_LANG([C++])
 
 # Checks for programs.
 AC_PROG_CXX
+AC_OPENMP
 
 # distribute additional compiler and linker flags
 # --> set these variables instead of CXXFLAGS or LDFLAGS
@@ -20,5 +21,6 @@ AC_SUBST([LIBS])
 # files to generate via autotools (.am or .in source files)
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([src/Makefile])
+AC_CONFIG_FILES([tests/Makefile])
 
 AC_OUTPUT

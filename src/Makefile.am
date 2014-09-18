@@ -1,5 +1,5 @@
 # what flags you want to pass to the C compiler & linker
-AM_CXXFLAGS = --pedantic -Wall -O2 -fopenmp
+AM_CXXFLAGS = --pedantic -Wall $(OPENMP_CXXFLAGS)
 
 lib_LTLIBRARIES = libtree3d.la
 libtree3d_la_SOURCES = tree3d.cpp
