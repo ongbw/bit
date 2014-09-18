@@ -1,21 +1,24 @@
-#                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.69])
-AC_INIT([libtree3d], [0.0.0], [ongbw@msu.edu])
+AC_INIT([libtree3d], [0.0], [ongbw@msu.edu])
 AC_CONFIG_SRCDIR([src/tree3d.cpp])
-AM_INIT_AUTOMAKE([foreign])
-AC_CONFIG_MACRO_DIR([m4])
+AM_INIT_AUTOMAKE([1.9])
+AC_PROG_LIBTOOL
 
-# Check for libtool
-LT_INIT
+# use the C++ compiler for the following checks
+AC_LANG([C++])
 
 # Checks for programs.
 AC_PROG_CXX
-AC_PROG_CC
-AC_PROG_LIBTOOL
 
-# Checks for library functions.
-AC_CHECK_FUNCS([sqrt])
+# distribute additional compiler and linker flags
+# --> set these variables instead of CXXFLAGS or LDFLAGS
+AC_SUBST([AM_CXXFLAGS])
+AC_SUBST([AM_LDFLAGS])
+AC_SUBST([LIBS])
 
-AC_OUTPUT(Makefile src/Makefile)
+# files to generate via autotools (.am or .in source files)
+AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([src/Makefile])
+
+AC_OUTPUT
