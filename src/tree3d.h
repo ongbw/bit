@@ -5,8 +5,9 @@
 //  modified by bwo (16/07/08)                                               //
 //  modified by bwo (02/16/10)                                               //
 //    -- using pointers for moments
+//  modified by ongbw (09/10/19) - two parameter family of regularization //
 /*---------------------------------------------------------------------------*/
-// 
+//
 // Global Variables
 // bdy_flg: flag for free space problem or bounded problem
 //             1-free space (to be coded first)
@@ -66,13 +67,13 @@ struct TREE {
   int *members;     // Index of member particles
   double ***moments;  // Moments of the cluster
 
-  TREE () 
+  TREE ()
   : nummemb(0),
     members(0x0),
     moments(0x0) { }
 };
 
-// Structure for panel 
+// Structure for panel
 struct PANEL{
   double x0;      // Starting x-point
   double x1;      // Ending x-point
@@ -115,7 +116,7 @@ int treemake(int num, int nterms, int maxmemb, PARTICLE* part, TREE* tree);
 // Deletes the tree particle arrays
 void treeempty(int numtree, TREE* tree);
 // Initialize the tree
-void treeinit(TREE* tree1, double x0, double x1, double y0, 
+void treeinit(TREE* tree1, double x0, double x1, double y0,
 	      double y1, double z0, double z1);
 // Divide a cluster into two pieces
 int treedivide(int dir, TREE* split, TREE* c1, TREE* c2, PARTICLE* part);
@@ -135,7 +136,7 @@ double RandL(void);
 // particle initializations
 
 // initialize mesh
-void init_mesh(int Nx, int Ny, int Nz, 
+void init_mesh(int Nx, int Ny, int Nz,
 	       double dlength, double dheight, double ddepth,
 	       PARTICLE* part);
 
@@ -159,9 +160,53 @@ int setboundaries(int xpanels, int ypanels, int zpanels, double dlength,
 /////////////////////////////////////
 // Force / electric field / potential calculation
 
-// Computes the force on a particle due to other particles using direct sum
-void force_particle_ds(int ind, int npart, PARTICLE* part, 
-		       double *xfor, double *yfor, double *zfor);
+// evaluate gradient of unregularized kernel
+void eval_grad_kernel_noreg(double dx, double dy, double dz, double rs,
+			    double *xfor, double *yfor, double *zfor);
+
+// evaluate gradient of regularized kernel
+void eval_grad_kernel_reg(double dx, double dy, double dz, double rs,
+			  double *xfor, double *yfor, double *zfor);
+
+// Computes the force at a point (x,y,z) due to particles using direct sum, no regularization
+void force_point_ds_noreg(double x, double y, double z, int npart, PARTICLE* part,
+			  double *xfor, double *yfor, double *zfor);
+
+// Computes the force on particle part[ind] due to particles using direct sum, no regularization
+void force_particle_ds_noreg(int ind, int npart, PARTICLE* part,
+			     double *xfor, double *yfor, double *zfor);
+
+// Computes the force at a point (x,y,z) due to particles using direct sum, regularized kernel
+void force_point_ds_reg(double x, double y, double z, int npart, PARTICLE* part,
+			double *xfor, double *yfor, double *zfor);
+
+// Computes the force on a particle, part[ind], due to particles using direct sum, regularized kernel
+void force_particle_ds_reg(int ind, int npart, PARTICLE* part,
+			   double *xfor, double *yfor, double *zfor);
+
+// calculates the electrostatic force on all particles, storing force in
+// part[j].xforce, part[j].yforce, part[j].zforce using direct sum
+void freespace_particles_ds_noreg(int npart, PARTICLE* part);
+
+// calculates the electrostatic force on all particles, storing force in
+// part[j].xforce, part[j].yforce, part[j].zforce using direct sum
+void freespace_particles_ds_reg(int npart, PARTICLE* part);
+
+
+// Compute the force at a point due to a cluster of particles
+void treetaylorforce(int nterms, double dx, double dy, double dz, double rs,
+                     double *xfor, double *yfor, double* zfor,
+		     double*** moment);
+
+// Main algorithm for computing the force at a point due to all particles
+// i.e. decision on when to use direct sum or treecode
+double treeforce(int ind, int p, int nterms, double x, double y, double z,
+		 double acc, double *xfor, double *yfor, double *zfor,
+		 TREE* tree, PARTICLE* part);
+
+
+
+
 
 // Computes shielded force on a particle due to other particles using direct sum
 void shielded_force_particle_ds(int ind, int npart, PARTICLE* part,
@@ -173,62 +218,49 @@ void shielded_pot_particle_ds(int ind, int npart, PARTICLE* part,
 			      double *pot, double alpha);
 
 
-
 // Computes the force at a point due to all particles using direct sum
-void force_point_ds(double x, double y, double z, int npart, PARTICLE* part, 
-		    double* xfor, double* yfor, double* zfor);
-
-// Computes the force at a point due to all particles using direct sum
-void shielded_force_point_ds(double x, double y, double z, 
-			     int npart, PARTICLE* part, 
+void shielded_force_point_ds(double x, double y, double z,
+			     int npart, PARTICLE* part,
 			     double* xfor, double* yfor, double* zfor,
 			     double alpha);
 
 
 
 // Computes the potential at a point due to all particles using direct sum
-double potreal_point(double x, double y, double z, int npart, 
+double potreal_point(double x, double y, double z, int npart,
 		   PARTICLE* part);
 
 
-// Compute the force at a point due to a cluster of particles
-void treetaylorforce(int nterms, double dx, double dy, double dz, double rs,
-                     double *xfor, double *yfor, double* zfor, 
-		     double*** moment);
 
 
 // Compute the shielded force at a point due to a cluster of particles
-void shielded_treetaylorforce(int nterms, double dx, double dy, double dz, 
-			      double rs, double *xfor, double *yfor, 
+void shielded_treetaylorforce(int nterms, double dx, double dy, double dz,
+			      double rs, double *xfor, double *yfor,
 			      double* zfor, double*** moment, double kappa);
-void shielded_treetaylorpot(int nterms, double dx, double dy, double dz, 
+void shielded_treetaylorpot(int nterms, double dx, double dy, double dz,
 			    double rs, double *pot,
 			    double*** moment, double kappa);
 
 /*
-void streetaylorforce(int nterms, double dx, double dy, double dz, 
-		      double rs, double *xfor, double *yfor, 
+void streetaylorforce(int nterms, double dx, double dy, double dz,
+		      double rs, double *xfor, double *yfor,
 		      double* zfor, double*** moment, double kappa);
 */
 
-// Main algorithm for computing the force at a point due to all particles 
-// i.e. decision on when to use direct sum or treecode
-double treeforce(int ind, int p, int nterms, double x, double y, double z,
-		 double acc, double *xfor, double *yfor, double *zfor,
-		 TREE* tree, PARTICLE* part); 
 
-// Main algorithm for computing the shielded force at a point due to 
+
+// Main algorithm for computing the shielded force at a point due to
 // all particles, i.e. decision on when to use direct sum or treecode
-double shielded_treeforce(int ind, int p, int nterms, 
+double shielded_treeforce(int ind, int p, int nterms,
 			  double x, double y, double z, double alpha,
-			  double acc, double *xfor, double *yfor, 
-			  double *zfor, TREE* tree, PARTICLE* part); 
+			  double acc, double *xfor, double *yfor,
+			  double *zfor, TREE* tree, PARTICLE* part);
 
-double shielded_treepot(int ind, int p, int nterms, 
+double shielded_treepot(int ind, int p, int nterms,
 			double x, double y, double z, double alpha,
 			double acc, double *pot, TREE* tree, PARTICLE* part,
 			int Nx, int Ny, int Nz,
-			double dlength, double dheight, double ddepth); 
+			double dlength, double dheight, double ddepth);
 
 
 
@@ -236,36 +268,32 @@ double shielded_treepot(int ind, int p, int nterms,
 void treetaylorpotential(int nterms, double dx, double dy, double dz, double rs,
 			 double* pot, double*** moment);
 
-// Main algorithm for computing the  force at a point due to all particles 
+// Main algorithm for computing the  force at a point due to all particles
 // i.e. decision on when to use direct sum or treecode
 double treepotential(int ind, int p, int nterms, double x, double y, double z,
 		     double acc, double* pot,
-		     TREE* tree, PARTICLE* part);  
+		     TREE* tree, PARTICLE* part);
 
 
- 
 
-// calculates the electrostatic force on each particle, and assigns it to 
-// part[j].xforce, part[j].yforce, part[j].zforce using direct sum
-void freespace_particles_ds(int npart, PARTICLE* part);
 
-// calculates the shielded electrostatic force on each particle, 
-// and assigns it to  part[j].xforce, part[j].yforce, part[j].zforce 
+// calculates the shielded electrostatic force on each particle,
+// and assigns it to  part[j].xforce, part[j].yforce, part[j].zforce
 // using direct sum
 void shielded_freespace_particles_ds(int npart, PARTICLE* part, double alpha);
 void shielded_freespace_pot_ds(int npart, PARTICLE* part, double alpha);
 
 
-// calculates the electrostatic force on each particle, and assigns it to 
+// calculates the electrostatic force on each particle, and assigns it to
 // part[j].xforce, part[j].yforce, part[j].zforce using the treecode
-void freespace_particles_tree(int npart, PARTICLE* part,int nterms, 
+void freespace_particles_tree(int npart, PARTICLE* part,int nterms,
 			      double acc, TREE* tree, int numtree, int maxmemb);
 
-// calculates the shielded electrostatic force on each particle, 
-// and assigns it to  part[j].xforce, part[j].yforce, part[j].zforce 
+// calculates the shielded electrostatic force on each particle,
+// and assigns it to  part[j].xforce, part[j].yforce, part[j].zforce
 // using the treecode
 void shielded_freespace_particles_tree(int npart, PARTICLE* part, double alpha,
-				       int nterms, double acc, TREE* tree, 
+				       int nterms, double acc, TREE* tree,
 				       int numtree, int maxmemb);
 
 
@@ -291,8 +319,8 @@ int loc_update(int npart, PARTICLE* part, double dt);
 // Panel functions
 
 // Panel initialization function
-void panelinit(PANEL* panl, double x0, double x1, double y0, double y1, 
-	       double z0, double z1, double refpot, double xnrm, 
+void panelinit(PANEL* panl, double x0, double x1, double y0, double y1,
+	       double z0, double z1, double refpot, double xnrm,
 	       double ynrm, double znrm, int type, int orientation);
 
 // Fills the panel effects array using naive riemann integration
@@ -324,17 +352,17 @@ void output_potential(int npart, PARTICLE* part, double *pot, string filename);
 
 void output_slice(int n, PARTICLE* part, double *pot, string headername);
 
-void output_fields(int npart, PARTICLE* part, 
+void output_fields(int npart, PARTICLE* part,
 		   double *Bx, double *By, double* Bz, string filename);
 
 void plot_efield_ds(int nxnodes, int nynodes, int nznodes,
 		    double dlength, double dheight, double ddepth,
 		    int npart, PARTICLE* part);
 
-void plot_efield_tree(int nxnodes, int nynodes, int nznodes, int npart, 
-		      int nterms, int maxmemb, double acc, 
+void plot_efield_tree(int nxnodes, int nynodes, int nznodes, int npart,
+		      int nterms, int maxmemb, double acc,
 		      double dlength, double dheight, double ddepth,
-		      PARTICLE* part, TREE* tree);  
+		      PARTICLE* part, TREE* tree);
 
 
 // Global variables
@@ -347,6 +375,3 @@ void plot_efield_tree(int nxnodes, int nynodes, int nznodes, int npart,
 double sq(double x);
 
 #endif //!defined(tree3D_h)
-
-
-

@@ -59,7 +59,7 @@ int main()  {
 #pragma omp for private(xfor,yfor,zfor)
     for (int iii=0; iii<npart; iii++)  {
       xfor = 0.0; yfor = 0.0; zfor = 0.0;
-      force_particle_ds(iii,npart,part,&xfor, &yfor, &zfor);
+      force_particle_ds_reg(iii,npart,part,&xfor, &yfor, &zfor);
       fx[iii]=xfor*charge_constant*part[iii].tot_charge;
       fy[iii]=yfor*charge_constant*part[iii].tot_charge;
       fz[iii]=zfor*charge_constant*part[iii].tot_charge;
