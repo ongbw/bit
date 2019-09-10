@@ -11,4 +11,4 @@ Early version of this treecode software implemented the treecode as described in
 <http://www.math.lsa.umich.edu/~krasny/paper_jcp_2001.pdf>
 
 The latest version of this treecode implements a two-parameter family of regularized kernels described in
-<http://dx.doi.org/10.1007/s10915-016-0328-0>
+<http://dx.doi.org/10.1007/s10915-016-0336-0>
